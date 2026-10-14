@@ -1,0 +1,65 @@
+{
+  "manifest_version": 3,
+  "name": "FotMob to Google Calendar - 1-Click Sync",
+  "version": "1.0.0",
+  "description": "1-Click add and remove football matches from FotMob to Google Calendar with custom reminders, event colors, and calendars.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0UEFL2RmllhBHVGnaay9WmCvVZnsJVnMmxY56Wlx+f1iAMXeFBPssHAdJrwhUp3cxnN+bgmaweipioiBADZlbN+L/NJVl1ZzzFLD+Bj4lZ5zGKvymGl5+tdQuZZomtcGMOHtL0wMHLrdnOuin5KsLMa/YAOaFlh70MaqIEq5EA8cdwbenT/b4gUvhDsjz2He6QmEtYcCbGob5BYdItCA6lCxlOeFXKG5ihFJd8JW/+whH4jS9QmbRhnhgqRAvGVp9HAFNSn3l9lNOi5UsGQykii/IajCtZJ4WuAiZPXXqgJ8lk4n+2pKVB5HEOKsDzV0Johw5GqTPJz3so1tnhBfEwIDAQAB",
+  "permissions": [
+    "storage",
+    "identity"
+  ],
+  "host_permissions": [
+    "*://*.fotmob.com/*",
+    "https://www.googleapis.com/*",
+    "https://accounts.google.com/*"
+  ],
+  "background": {
+    "service_worker": "background/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.fotmob.com/*"
+      ],
+      "css": [
+        "content/content.css"
+      ],
+      "js": [
+        "content/content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "FotMob to Google Calendar",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "icons/*",
+        "content/content.css"
+      ],
+      "matches": [
+        "*://*.fotmob.com/*"
+      ]
+    }
+  ]
+}

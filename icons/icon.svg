@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#10B981" />
+    </linearGradient>
+    <linearGradient id="calHeader" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563EB" />
+      <stop offset="100%" stop-color="#1D4ED8" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <!-- Background Stadium Pill -->
+  <rect width="128" height="128" rx="28" fill="url(#bgGrad)" />
+  
+  <!-- Calendar Body with Shadow -->
+  <g filter="url(#shadow)">
+    <!-- Calendar Body -->
+    <rect x="22" y="24" width="84" height="82" rx="14" fill="#FFFFFF" />
+    
+    <!-- Calendar Header Bar -->
+    <path d="M22 38 C22 30.268 28.268 24 36 24 L92 24 C99.732 24 106 30.268 106 38 L106 46 L22 46 Z" fill="url(#calHeader)" />
+    
+    <!-- Calendar Rings -->
+    <circle cx="42" cy="22" r="3.5" fill="#E2E8F0" stroke="#0F172A" stroke-width="2"/>
+    <circle cx="86" cy="22" r="3.5" fill="#E2E8F0" stroke="#0F172A" stroke-width="2"/>
+    
+    <!-- Football in Center -->
+    <g transform="translate(64, 76)">
+      <circle r="22" fill="#F8FAFC" stroke="#0F172A" stroke-width="2.5"/>
+      <!-- Center polygon -->
+      <polygon points="0,-7 6.6,-2.2 4.1,5.7 -4.1,5.7 -6.6,-2.2" fill="#0F172A"/>
+      <!-- Seam lines -->
+      <line x1="0" y1="-7" x2="0" y2="-18" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+      <line x1="6.6" y1="-2.2" x2="16.5" y2="-7" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+      <line x1="4.1" y1="5.7" x2="12" y2="15" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+      <line x1="-4.1" y1="5.7" x2="-12" y2="15" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+      <line x1="-6.6" y1="-2.2" x2="-16.5" y2="-7" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+    </g>
+  </g>
+</svg>

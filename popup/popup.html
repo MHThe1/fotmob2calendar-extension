@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FotMob to Google Calendar</title>
+  <link rel="stylesheet" href="popup.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="popup-wrapper">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <div class="brand-badge">⚽</div>
+        <span class="brand-title">FotMob2Cal</span>
+      </div>
+      <div id="authStatusPill" class="status-pill status-disconnected">
+        <span class="status-dot"></span>
+        <span id="authStatusText">Not Connected</span>
+      </div>
+    </header>
+
+    <!-- Account & Target Calendar Card -->
+    <div class="status-card" id="statusCard">
+      <div class="status-row">
+        <span class="status-label">Target Calendar</span>
+        <span class="status-value" id="targetCalName">Primary</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Account</span>
+        <span class="status-value" id="userEmailText">Not connected</span>
+      </div>
+    </div>
+
+    <!-- Quick Action / Synced Matches Section -->
+    <div class="section-header">
+      <span class="section-title">Upcoming Synced Matches</span>
+      <span class="count-badge" id="syncedCount">0</span>
+    </div>
+
+    <div class="matches-list" id="matchesList">
+      <!-- Dynamic match items -->
+      <div class="empty-state" id="emptyState">
+        <span class="empty-icon">📅</span>
+        <p>No matches synced yet.</p>
+        <span class="empty-sub">Click the calendar icon on any FotMob match to add it!</span>
+      </div>
+    </div>
+
+    <!-- Quick Footer Actions -->
+    <footer class="popup-footer">
+      <button class="footer-btn" id="btnOpenOptions">
+        <span>⚙️</span> Settings
+      </button>
+      <button class="footer-btn" id="btnOpenGCal">
+        <span>📅</span> Open Calendar
+      </button>
+      <button class="footer-btn" id="btnOpenFotmob">
+        <span>⚽</span> FotMob
+      </button>
+    </footer>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

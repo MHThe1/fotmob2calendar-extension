@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FotMob to Google Calendar - Settings</title>
+  <link rel="stylesheet" href="options.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="3" ry="3"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+            <circle cx="12" cy="15" r="2.5"></circle>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h2>FotMob2Cal</h2>
+          <span class="badge-version">v1.0.0</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button class="nav-item active" data-tab="account">
+          <span class="nav-icon">🔑</span>
+          <span>Google Account</span>
+        </button>
+        <button class="nav-item" data-tab="calendar">
+          <span class="nav-icon">📅</span>
+          <span>Calendar & Event</span>
+        </button>
+        <button class="nav-item" data-tab="reminders">
+          <span class="nav-icon">🔔</span>
+          <span>Reminders</span>
+        </button>
+        <button class="nav-item" data-tab="styling">
+          <span class="nav-icon">🎨</span>
+          <span>Colors & Titles</span>
+        </button>
+        <button class="nav-item" data-tab="synced">
+          <span class="nav-icon">📋</span>
+          <span>Synced Matches</span>
+          <span class="badge-count" id="syncedCountBadge">0</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="https://www.fotmob.com" target="_blank" class="link-fotmob">Open FotMob ↗</a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Status Banner -->
+      <header class="top-header">
+        <div>
+          <h1 id="pageTitle">Google Account & OAuth Setup</h1>
+          <p class="subtitle" id="pageSubtitle">Connect your Google Calendar to enable instant 1-click sync from FotMob.</p>
+        </div>
+        <div id="saveFeedback" class="save-indicator">
+          <span class="dot"></span> All changes saved
+        </div>
+      </header>
+
+      <!-- TAB 1: Account & OAuth -->
+      <section class="tab-pane active" id="pane-account">
+        <!-- Auth Status Card -->
+        <div class="card auth-card" id="authStatusCard">
+          <div class="card-header">
+            <div>
+              <h3>Account Status</h3>
+              <p class="card-desc">Google Calendar API connection state</p>
+            </div>
+            <div id="authStatusBadge" class="status-pill disconnected">Not Connected</div>
+          </div>
+
+          <!-- Connected View -->
+          <div id="connectedView" class="auth-view hidden">
+            <div class="user-profile">
+              <img id="userAvatar" src="../icons/icon48.png" alt="Avatar" class="avatar">
+              <div class="user-details">
+                <h4 id="userName">User Name</h4>
+                <p id="userEmail">user@example.com</p>
+                <span class="active-dot-label"><span class="pulse-dot"></span> Ready to sync matches</span>
+              </div>
+            </div>
+            <div class="auth-actions">
+              <button id="btnDisconnect" class="btn btn-danger">Disconnect Account</button>
+            </div>
+          </div>
+
+          <!-- Disconnected View -->
+          <div id="disconnectedView" class="auth-view">
+            <p class="auth-intro">
+              To add and remove matches with 1 click directly in FotMob, connect your Google Account with Google Calendar permissions.
+            </p>
+
+            <div class="form-group">
+              <label for="clientIdInput">
+                Google Cloud OAuth Client ID:
+                <span class="label-hint">(Optional if pre-configured, or paste yours below)</span>
+              </label>
+              <div class="input-with-button">
+                <input type="text" id="clientIdInput" class="input-text" placeholder="123456789-abcdefg.apps.googleusercontent.com">
+                <button id="btnSaveClientId" class="btn btn-secondary">Save ID</button>
+              </div>
+            </div>
+
+            <div class="auth-actions">
+              <button id="btnConnectGoogle" class="btn btn-primary btn-google">
+                <svg viewBox="0 0 24 24" width="18" height="18">
+                  <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
+                  <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+                  <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.98 0 12s.45 3.82 1.25 5.42l4.03-3.15z"/>
+                  <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+                </svg>
+                Connect Google Account
+              </button>
+            </div>
+
+            <!-- Setup Walkthrough Accordion -->
+            <details class="setup-accordion">
+              <summary>
+                <span>💡 3-Minute Guide: How to create a Google Cloud OAuth Client ID</span>
+                <span class="chevron">▼</span>
+              </summary>
+              <div class="setup-steps">
+                <ol>
+                  <li>Go to the <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="accent-link">Google Cloud Console Credentials Page ↗</a>.</li>
+                  <li>Create a new project (e.g. <em>FotMob Calendar Sync</em>) or pick an existing one.</li>
+                  <li>Enable the <strong>Google Calendar API</strong> from the <em>API Library</em>.</li>
+                  <li>Go to <strong>OAuth consent screen</strong> &gt; Select <em>External</em> &gt; Add your email. Under Scopes, add <code>Google Calendar API (/auth/calendar.events)</code>. Under Test Users, add your Google email address.</li>
+                  <li>Go to <strong>Credentials</strong> &gt; Click <strong>Create Credentials</strong> &gt; <strong>OAuth client ID</strong>.</li>
+                  <li>Choose Application type: <strong>Web application</strong>.</li>
+                  <li>
+                    In <strong>Authorized redirect URIs</strong>, paste this exact URI:
+                    <div class="copy-box">
+                      <code id="redirectUriDisplay">https://bebibnckeidijgchhcejbedinldcmfnn.chromiumapp.org/</code>
+                      <button class="btn-copy" id="btnCopyUri">Copy</button>
+                    </div>
+                  </li>
+                  <li>Click <strong>Create</strong>, copy the generated <strong>Client ID</strong>, paste it into the box above, and click <strong>Connect Google Account</strong>!</li>
+                </ol>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: Calendar & Event -->
+      <section class="tab-pane" id="pane-calendar">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Target Google Calendar</h3>
+              <p class="card-desc">Choose which calendar FotMob matches will be added to.</p>
+            </div>
+            <button id="btnRefreshCalendars" class="btn btn-secondary btn-sm">🔄 Refresh</button>
+          </div>
+
+          <div class="form-group">
+            <label for="calendarSelect">Select Calendar:</label>
+            <select id="calendarSelect" class="input-select">
+              <option value="primary">Primary Calendar (Default)</option>
+            </select>
+            <p class="field-hint">You can create a separate "⚽ Football" calendar in Google Calendar to keep matches organized!</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Match Duration & Event Details</h3>
+              <p class="card-desc">How matches should appear on your schedule</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="durationInput">Default Duration (Minutes):</label>
+            <div class="duration-slider-row">
+              <input type="range" id="durationSlider" min="90" max="180" step="5" value="115" class="slider">
+              <div class="duration-val-badge"><span id="durationValText">115</span> mins</div>
+            </div>
+            <p class="field-hint">Recommended: 115 minutes (90 mins match + 15 mins halftime + 10 mins stoppage time).</p>
+          </div>
+
+          <div class="form-group toggles-group">
+            <label class="toggle-row">
+              <input type="checkbox" id="toggleVenue" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Include Stadium / Venue in Event Location</span>
+            </label>
+
+            <label class="toggle-row">
+              <input type="checkbox" id="toggleFotmobUrl" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Include Link back to FotMob Match Page</span>
+            </label>
+
+            <label class="toggle-row">
+              <input type="checkbox" id="toggleRound" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Include Tournament Round & Stage in Description</span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: Reminders -->
+      <section class="tab-pane" id="pane-reminders">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Kickoff Reminders</h3>
+              <p class="card-desc">Get notified before the match starts so you never miss kickoff.</p>
+            </div>
+          </div>
+
+          <div id="remindersList" class="reminders-list">
+            <!-- Dynamically populated reminder rows -->
+          </div>
+
+          <div class="add-reminder-row">
+            <select id="newReminderMinutes" class="input-select reminder-select">
+              <option value="10">10 minutes before</option>
+              <option value="15" selected>15 minutes before</option>
+              <option value="30">30 minutes before</option>
+              <option value="60">1 hour before</option>
+              <option value="120">2 hours before</option>
+              <option value="1440">1 day before</option>
+            </select>
+            <select id="newReminderMethod" class="input-select reminder-select">
+              <option value="popup" selected>Notification / Pop-up</option>
+              <option value="email">Email</option>
+            </select>
+            <button id="btnAddReminder" class="btn btn-secondary">+ Add Reminder</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: Styling & Title -->
+      <section class="tab-pane" id="pane-styling">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Event Color</h3>
+              <p class="card-desc">Select the default Google Calendar color tag for soccer matches.</p>
+            </div>
+          </div>
+
+          <div class="color-palette" id="colorPalette">
+            <!-- 11 Google Calendar Colors -->
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Event Title Format</h3>
+              <p class="card-desc">Customize how the event title is formatted.</p>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="titleFormatInput">Title Template:</label>
+            <input type="text" id="titleFormatInput" class="input-text" value="⚽ {home} vs {away} ({league})">
+            
+            <div class="template-tags">
+              <span class="tag-chip" data-insert="{home}">+ {home}</span>
+              <span class="tag-chip" data-insert="{away}">+ {away}</span>
+              <span class="tag-chip" data-insert="{league}">+ {league}</span>
+              <span class="tag-chip" data-insert="{round}">+ {round}</span>
+            </div>
+          </div>
+
+          <!-- Live Event Preview Card -->
+          <div class="live-preview-box">
+            <div class="preview-label">Live Google Calendar Event Preview</div>
+            <div class="preview-card" id="previewCard">
+              <div class="preview-color-bar" id="previewColorBar"></div>
+              <div class="preview-content">
+                <div class="preview-title" id="previewTitle">⚽ Arsenal vs Chelsea (Premier League)</div>
+                <div class="preview-time" id="previewTime">Sunday, Oct 25 · 17:30 - 19:25</div>
+                <div class="preview-meta" id="previewVenue">🏟️ Emirates Stadium, London</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: Synced Matches -->
+      <section class="tab-pane" id="pane-synced">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3>Synced Matches History</h3>
+              <p class="card-desc">Matches currently added to your Google Calendar via 1-click sync.</p>
+            </div>
+            <button id="btnClearAllSynced" class="btn btn-danger btn-sm">Clear Local Cache</button>
+          </div>
+
+          <div id="syncedEmptyState" class="empty-state">
+            <div class="empty-icon">⚽</div>
+            <h4>No matches synced yet</h4>
+            <p>Visit <a href="https://www.fotmob.com" target="_blank" class="accent-link">FotMob.com</a> and click the calendar icon next to any fixture to sync it!</p>
+          </div>
+
+          <div id="syncedTableContainer" class="table-container hidden">
+            <table class="synced-table">
+              <thead>
+                <tr>
+                  <th>Match</th>
+                  <th>Competition</th>
+                  <th>Kickoff</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="syncedTableBody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>
