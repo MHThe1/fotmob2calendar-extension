@@ -35,12 +35,18 @@
 
 /* Match Header Action Button */
 .f2c-btn-header {
-  padding: 8px 14px;
+  padding: 6px 14px;
+  height: 36px;
   background: rgba(16, 185, 129, 0.14);
   color: #10b981;
   border: 1px solid rgba(16, 185, 129, 0.3);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-  margin-left: 8px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .f2c-btn-header:hover {

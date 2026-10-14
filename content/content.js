@@ -637,30 +637,43 @@
    * Helper to extract home and away team names from match page
    */
   function extractTeamsFromPage() {
-    const titles = Array.from(document.querySelectorAll('h1, h2, [class*="TeamTitle"], [class*="teamName"]'))
-      .map(el => el.textContent.trim())
-      .filter(Boolean);
-
-    // Look for "Team A vs Team B" in h1
+    // 1. Look for "Team A vs Team B" in h1
     const h1 = document.querySelector('h1')?.textContent || '';
     if (h1.includes(' vs ')) {
       const parts = h1.split(' vs ');
       return [parts[0].trim(), parts[1].trim()];
     }
 
-    return [titles[0] || 'Home', titles[1] || 'Away'];
+    // 2. Look in document.title (e.g. "Arsenal vs Lille - live score...")
+    const title = document.title || '';
+    if (title.includes(' vs ')) {
+      const beforeDash = title.split(' - ')[0] || title;
+      const parts = beforeDash.split(' vs ');
+      if (parts.length >= 2) {
+        return [parts[0].trim(), parts[1].trim()];
+      }
+    }
+
+    // 3. Fallback to elements with TeamTitle or teamName
+    const titles = Array.from(document.querySelectorAll('h1, h2, [class*="TeamTitle"], [class*="teamName"]'))
+      .map(el => el.textContent.trim())
+      .filter(Boolean);
+
+    return [titles[0] || 'Home Team', titles[1] || 'Away Team'];
   }
 
   /**
    * Helper to locate formatted date/time text in match header
    */
   function findMatchHeaderDateTimeText() {
-    // Look for text matching "Oct 14", "10:45 PM", etc.
-    const allSpans = Array.from(document.querySelectorAll('header span, header div, main header *'));
-    for (const el of allSpans) {
-      const text = el.textContent.trim();
-      if (text.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2}.*?\d{1,2}:\d{2}/i)) {
-        return text;
+    // Look for text matching "Oct 14", "10:45 PM", etc. anywhere in the presentation
+    const allEls = Array.from(document.querySelectorAll('main span, main div, [role="main"] *, header *, div'));
+    for (const el of allEls) {
+      if (el.children.length === 0) {
+        const text = el.textContent.trim();
+        if (text.match(/(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2}.*?\d{1,2}:\d{2}/i)) {
+          return text;
+        }
       }
     }
     return null;
@@ -823,73 +836,79 @@
   }
 
   /**
+   * Locate the exact header container on a match page to inject our button
+   */
+  function findMatchHeaderTarget() {
+    // 1. Follow button (text "Follow" or "Following" or class contains "FollowButton")
+    const allButtons = Array.from(document.querySelectorAll('button'));
+    const followBtn = allButtons.find((b) => {
+      const txt = b.textContent.trim().toLowerCase();
+      const cls = (typeof b.className === 'string' ? b.className : '').toLowerCase();
+      const aria = (b.getAttribute('aria-label') || '').toLowerCase();
+      return txt === 'follow' || txt === 'following' || cls.includes('followbutton') || aria.includes('follow');
+    });
+
+    if (followBtn && followBtn.parentElement) {
+      return { container: followBtn.parentElement, insertBefore: followBtn };
+    }
+
+    // 2. League link in match header (e.g. /leagues/...)
+    const leagueLink = document.querySelector('a[class*="MFHeaderLeagueCSS"], a[href*="/leagues/"]');
+    if (leagueLink && leagueLink.parentElement) {
+      return { container: leagueLink.parentElement, insertBefore: null };
+    }
+
+    // 3. Fallback: match details wrapper
+    const matchContainer = document.querySelector('[class*="MatchDetails"], [class*="MatchHeader"], main, [role="main"]');
+    if (matchContainer) {
+      const firstDiv = matchContainer.querySelector('div');
+      if (firstDiv) return { container: firstDiv, insertBefore: null };
+    }
+
+    return null;
+  }
+
+  /**
    * Scan and Inject Button on Individual Match Page Header Only
    */
   function injectMatchHeaderButton() {
     const currentMatchId = getActiveMatchId();
 
     // 1. If we are NOT on an individual match page, remove ALL header buttons immediately
-    if (!currentMatchId) {
+    if (!isIndividualMatchPage() || !currentMatchId) {
       document.querySelectorAll('.f2c-btn-header').forEach((btn) => btn.remove());
       return;
     }
 
-    // 2. Remove any buttons belonging to a DIFFERENT match ID (prevent buttons from previous pages piling up)
+    const currentCandidates = extractMatchCandidateIds(window.location.href);
+
+    // 2. Remove buttons that DO NOT belong to any candidate ID of the current page
     document.querySelectorAll('.f2c-btn-header').forEach((btn) => {
-      if (btn.getAttribute('data-f2c-match-id') !== String(currentMatchId)) {
+      const btnId = btn.getAttribute('data-f2c-match-id');
+      if (!currentCandidates.includes(btnId)) {
         btn.remove();
       }
     });
 
-    // 3. If a button already exists for this match, verify only 1 exists and don't re-inject
-    const existingButtons = document.querySelectorAll(`.f2c-btn-header[data-f2c-match-id="${currentMatchId}"]`);
+    // 3. If a button already exists for one of the current candidates, keep it and ensure only 1
+    const existingButtons = Array.from(document.querySelectorAll('.f2c-btn-header')).filter((btn) => {
+      return currentCandidates.includes(btn.getAttribute('data-f2c-match-id'));
+    });
+
     if (existingButtons.length > 0) {
-      // Clean up any duplicates if they ever exist
       for (let i = 1; i < existingButtons.length; i++) {
         existingButtons[i].remove();
       }
+      existingButtons[0].setAttribute('data-f2c-match-id', currentMatchId);
       return;
     }
 
-    // 4. Look specifically for the match header presentation area (inside main, NOT in the global site navbar)
-    const selectors = [
-      'main [class*="FollowButton" i]',
-      'main [aria-label*="Follow" i]',
-      'main [title*="Follow" i]',
-      '[class*="MFHeaderLeagueCSS"]',
-      '[class*="MFHeader"] [aria-label*="star" i]',
-      'main [class*="MatchDetailsHeader"]',
-      'main [class*="HeaderWrapper"]',
-      'main header'
-    ];
-
-    let targetContainer = null;
-    let insertBeforeEl = null;
-
-    for (const sel of selectors) {
-      const el = document.querySelector(sel);
-      if (el) {
-        if (el.matches('[class*="FollowButton" i], [aria-label*="Follow" i], [title*="Follow" i]')) {
-          targetContainer = el.parentElement;
-          insertBeforeEl = el;
-        } else {
-          targetContainer = el.parentElement || el;
-        }
-        break;
-      }
-    }
-
-    if (!targetContainer) {
-      const h1 = document.querySelector('main h1');
-      if (h1 && h1.parentElement) {
-        targetContainer = h1.parentElement;
-      }
-    }
-
-    if (!targetContainer) return;
+    // 4. Find the target injection point
+    const target = findMatchHeaderTarget();
+    if (!target || !target.container) return;
 
     // Concurrency check before appending
-    if (document.querySelector(`.f2c-btn-header[data-f2c-match-id="${currentMatchId}"]`)) {
+    if (document.querySelector('.f2c-btn-header')) {
       return;
     }
 
@@ -904,10 +923,10 @@
       handleButtonClick(btn, currentMatchId);
     });
 
-    if (insertBeforeEl && insertBeforeEl.parentElement === targetContainer) {
-      targetContainer.insertBefore(btn, insertBeforeEl);
+    if (target.insertBefore && target.insertBefore.parentElement === target.container) {
+      target.container.insertBefore(btn, target.insertBefore);
     } else {
-      targetContainer.appendChild(btn);
+      target.container.appendChild(btn);
     }
 
     // Check sync status immediately
@@ -1008,12 +1027,13 @@
 
   // Instant cleanup & cascading scans on SPA route changes
   function handleUrlChange() {
-    const activeMatchId = getActiveMatchId();
-    if (!activeMatchId) {
+    if (!isIndividualMatchPage()) {
       document.querySelectorAll('.f2c-btn-header').forEach((btn) => btn.remove());
     } else {
+      const currentCandidates = extractMatchCandidateIds(window.location.href);
       document.querySelectorAll('.f2c-btn-header').forEach((btn) => {
-        if (btn.getAttribute('data-f2c-match-id') !== String(activeMatchId)) {
+        const btnId = btn.getAttribute('data-f2c-match-id');
+        if (!currentCandidates.includes(btnId)) {
           btn.remove();
         }
       });
