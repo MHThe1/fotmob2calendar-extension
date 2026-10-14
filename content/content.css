@@ -20,66 +20,17 @@
   box-sizing: border-box;
 }
 
-/* Fixture Mini Row Button - Subtle & Native */
-.f2c-btn-mini {
-  width: 24px;
-  height: 24px;
-  min-width: 24px;
-  padding: 0;
+/* Subtle highlight on fixture rows that are already in Google Calendar */
+.f2c-row-synced {
+  background: rgba(16, 185, 129, 0.08) !important;
+  box-shadow: inset 3px 0 0 #10b981 !important;
   border-radius: 6px;
-  background: transparent;
-  color: #94a3b8;
-  border: 1px solid transparent;
-  margin: 0 4px;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 5;
-  opacity: 0.35;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Reveal when hovering the row or the button itself */
-:is([class*="Match" i], [class*="match" i], tr, li, div):hover > .f2c-btn-mini,
-.f2c-btn-mini:hover {
-  opacity: 1;
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.12);
-  border-color: rgba(16, 185, 129, 0.3);
-}
-
-.f2c-btn-mini:hover {
-  transform: scale(1.08);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
-}
-
-.f2c-btn-mini svg {
-  width: 14px;
-  height: 14px;
-  fill: currentColor;
-  transition: transform 0.18s ease;
-}
-
-/* Synced State - Always visible as a clean checkmark, but subtle */
-.f2c-btn-mini.f2c-synced {
-  opacity: 0.9;
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.f2c-btn-mini.f2c-synced:hover {
-  opacity: 1;
-  background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
-  border-color: rgba(239, 68, 68, 0.35);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
-  transform: scale(1.08);
-}
-
-.f2c-btn-mini.f2c-loading {
-  pointer-events: none;
-  opacity: 0.8;
+.f2c-row-synced:hover {
+  background: rgba(16, 185, 129, 0.14) !important;
+  box-shadow: inset 4px 0 0 #10b981 !important;
 }
 
 /* Match Header Action Button */

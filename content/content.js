@@ -770,42 +770,42 @@
   }
 
   /**
-   * Update button UI to synced or un-synced state
+   * Update button UI to synced or un-synced state (used for individual match page header)
    */
   function setButtonState(button, isSynced) {
-    const isHeader = button.classList.contains('f2c-btn-header');
-
     if (isSynced) {
       button.classList.add('f2c-synced');
-      if (isHeader) {
-        button.innerHTML = `${ICONS.calendarCheck}<span>In Calendar</span>`;
-        button.setAttribute('data-f2c-tooltip', 'Click to remove from Google Calendar');
-      } else {
-        button.innerHTML = ICONS.calendarCheck;
-        button.setAttribute('data-f2c-tooltip', 'In Calendar (Click to remove)');
-      }
+      button.innerHTML = `${ICONS.calendarCheck}<span>In Calendar</span>`;
+      button.setAttribute('data-f2c-tooltip', 'Click to remove from Google Calendar');
     } else {
       button.classList.remove('f2c-synced');
-      if (isHeader) {
-        button.innerHTML = `${ICONS.calendarAdd}<span>Add to Calendar</span>`;
-        button.setAttribute('data-f2c-tooltip', 'Add match kickoff to Google Calendar');
-      } else {
-        button.innerHTML = ICONS.calendarAdd;
-        button.setAttribute('data-f2c-tooltip', 'Add match to Google Calendar');
-      }
+      button.innerHTML = `${ICONS.calendarAdd}<span>Add to Calendar</span>`;
+      button.setAttribute('data-f2c-tooltip', 'Add match kickoff to Google Calendar');
     }
   }
 
   /**
-   * Update all buttons matching a matchId across the page
+   * Update all elements matching a matchId across the page (header button and fixture row highlights)
    */
   function updateAllButtonsForMatch(matchId, isSynced) {
-    const buttons = document.querySelectorAll(`[data-f2c-match-id="${matchId}"]`);
+    // 1. Update individual match header button
+    const buttons = document.querySelectorAll(`.f2c-btn-header[data-f2c-match-id="${matchId}"]`);
     buttons.forEach((btn) => setButtonState(btn, isSynced));
+
+    // 2. Update fixture row highlights
+    const rows = document.querySelectorAll(`[data-f2c-row-match-id="${matchId}"]`);
+    rows.forEach((row) => {
+      row.classList.toggle('f2c-row-synced', !!isSynced);
+      if (isSynced) {
+        row.setAttribute('title', 'Match is in your Google Calendar');
+      } else {
+        row.removeAttribute('title');
+      }
+    });
   }
 
   /**
-   * Scan and Inject Button on Individual Match Page Header
+   * Scan and Inject Button on Individual Match Page Header Only
    */
   function injectMatchHeaderButton() {
     const currentPath = window.location.pathname;
@@ -870,10 +870,15 @@
   }
 
   /**
-   * Scan and Inject Mini Buttons in Fixture Lists & Tables
+   * Scan fixture rows and apply subtle background highlight if the match is in Google Calendar
+   * No buttons are injected into fixture rows.
    */
-  function injectFixtureListButtons() {
-    // Find all links to matches
+  function updateFixtureRowHighlights() {
+    // Remove any leftover mini buttons if previously injected
+    const leftoverButtons = document.querySelectorAll('.f2c-btn-mini');
+    leftoverButtons.forEach((btn) => btn.remove());
+
+    // Find all links to matches in tables or fixture lists
     const matchLinks = document.querySelectorAll('a[href*="/match/"], a[href*="/matches/"]');
     const newMatchIds = new Set();
 
@@ -882,39 +887,20 @@
       const matchId = extractMatchId(href);
       if (!matchId) return;
 
-      // Don't inject twice on same row
-      if (link.dataset.f2cInjected === 'true' || 
-          link.querySelector('.f2c-btn-mini') ||
-          link.parentElement?.querySelector(`.f2c-btn-mini[data-f2c-match-id="${matchId}"]`)) {
-        return;
-      }
+      // Tag row element with match ID for quick lookup and styling
+      link.setAttribute('data-f2c-row-match-id', matchId);
 
-      link.dataset.f2cInjected = 'true';
-      newMatchIds.add(matchId);
-
-      const btn = document.createElement('button');
-      btn.className = 'f2c-btn f2c-btn-mini';
-      btn.setAttribute('data-f2c-match-id', matchId);
-      btn.type = 'button';
-      setButtonState(btn, syncedStateMap.get(matchId) || false);
-
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        handleButtonClick(btn, matchId, link);
-      });
-
-      // Insert button subtly beside the match link or follow star button (not inside the link!)
-      const starBtn = link.parentElement?.querySelector('button[title*="Follow" i], button[aria-label*="Follow" i], [class*="FollowStar" i]');
-      if (starBtn && starBtn.parentElement) {
-        starBtn.parentElement.insertBefore(btn, starBtn);
-      } else if (link.nextElementSibling) {
-        link.parentElement.insertBefore(btn, link.nextElementSibling);
-      } else if (link.parentElement) {
-        link.parentElement.appendChild(btn);
+      // If we already know the synced status, apply highlight immediately
+      if (syncedStateMap.has(matchId)) {
+        const isSynced = syncedStateMap.get(matchId);
+        link.classList.toggle('f2c-row-synced', !!isSynced);
+        if (isSynced) {
+          link.setAttribute('title', 'Match is in your Google Calendar');
+        } else {
+          link.removeAttribute('title');
+        }
       } else {
-        link.appendChild(btn);
+        newMatchIds.add(matchId);
       }
     });
 
@@ -925,7 +911,15 @@
         if (res.success && res.data) {
           Object.entries(res.data).forEach(([mId, isSynced]) => {
             syncedStateMap.set(mId, isSynced);
-            updateAllButtonsForMatch(mId, isSynced);
+            const rows = document.querySelectorAll(`[data-f2c-row-match-id="${mId}"]`);
+            rows.forEach((row) => {
+              row.classList.toggle('f2c-row-synced', !!isSynced);
+              if (isSynced) {
+                row.setAttribute('title', 'Match is in your Google Calendar');
+              } else {
+                row.removeAttribute('title');
+              }
+            });
           });
         }
       });
@@ -937,7 +931,7 @@
    */
   function scanPage() {
     injectMatchHeaderButton();
-    injectFixtureListButtons();
+    updateFixtureRowHighlights();
   }
 
   function scheduleScan() {
