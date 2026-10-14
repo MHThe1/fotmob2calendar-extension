@@ -805,41 +805,82 @@
   }
 
   /**
+   * Helper to check if current page is an individual match page
+   */
+  function isIndividualMatchPage() {
+    const pathname = window.location.pathname;
+    return /^\/match(?:es)?\/[^\/]+/i.test(pathname);
+  }
+
+  /**
+   * Extract active match ID for the current page only if it's an individual match page
+   */
+  function getActiveMatchId() {
+    if (!isIndividualMatchPage()) return null;
+    const currentHash = window.location.hash;
+    const currentPath = window.location.pathname;
+    return extractMatchId(currentHash) || extractMatchId(currentPath);
+  }
+
+  /**
    * Scan and Inject Button on Individual Match Page Header Only
    */
   function injectMatchHeaderButton() {
-    const currentPath = window.location.pathname;
-    const currentHash = window.location.hash;
-    const matchId = extractMatchId(currentHash) || extractMatchId(currentPath);
+    const currentMatchId = getActiveMatchId();
 
-    if (!matchId) return;
-
-    // Check if already injected
-    if (document.querySelector(`.f2c-btn-header[data-f2c-match-id="${matchId}"]`)) {
+    // 1. If we are NOT on an individual match page, remove ALL header buttons immediately
+    if (!currentMatchId) {
+      document.querySelectorAll('.f2c-btn-header').forEach((btn) => btn.remove());
       return;
     }
 
-    // Look for header action area (near Star / Bell / Follow buttons)
+    // 2. Remove any buttons belonging to a DIFFERENT match ID (prevent buttons from previous pages piling up)
+    document.querySelectorAll('.f2c-btn-header').forEach((btn) => {
+      if (btn.getAttribute('data-f2c-match-id') !== String(currentMatchId)) {
+        btn.remove();
+      }
+    });
+
+    // 3. If a button already exists for this match, verify only 1 exists and don't re-inject
+    const existingButtons = document.querySelectorAll(`.f2c-btn-header[data-f2c-match-id="${currentMatchId}"]`);
+    if (existingButtons.length > 0) {
+      // Clean up any duplicates if they ever exist
+      for (let i = 1; i < existingButtons.length; i++) {
+        existingButtons[i].remove();
+      }
+      return;
+    }
+
+    // 4. Look specifically for the match header presentation area (inside main, NOT in the global site navbar)
     const selectors = [
-      'header [aria-label*="star" i], header [aria-label*="favorite" i], header [aria-label*="follow" i]',
-      'header [aria-label*="notification" i], header [aria-label*="bell" i]',
-      'header button',
-      'main header',
-      '[class*="MatchDetailsHeader"]',
-      '[class*="HeaderWrapper"]'
+      'main [class*="FollowButton" i]',
+      'main [aria-label*="Follow" i]',
+      'main [title*="Follow" i]',
+      '[class*="MFHeaderLeagueCSS"]',
+      '[class*="MFHeader"] [aria-label*="star" i]',
+      'main [class*="MatchDetailsHeader"]',
+      'main [class*="HeaderWrapper"]',
+      'main header'
     ];
 
     let targetContainer = null;
+    let insertBeforeEl = null;
+
     for (const sel of selectors) {
       const el = document.querySelector(sel);
       if (el) {
-        targetContainer = el.parentElement;
+        if (el.matches('[class*="FollowButton" i], [aria-label*="Follow" i], [title*="Follow" i]')) {
+          targetContainer = el.parentElement;
+          insertBeforeEl = el;
+        } else {
+          targetContainer = el.parentElement || el;
+        }
         break;
       }
     }
 
     if (!targetContainer) {
-      const h1 = document.querySelector('h1');
+      const h1 = document.querySelector('main h1');
       if (h1 && h1.parentElement) {
         targetContainer = h1.parentElement;
       }
@@ -847,23 +888,32 @@
 
     if (!targetContainer) return;
 
+    // Concurrency check before appending
+    if (document.querySelector(`.f2c-btn-header[data-f2c-match-id="${currentMatchId}"]`)) {
+      return;
+    }
+
     const btn = document.createElement('button');
     btn.className = 'f2c-btn f2c-btn-header';
-    btn.setAttribute('data-f2c-match-id', matchId);
-    setButtonState(btn, syncedStateMap.get(matchId) || false);
+    btn.setAttribute('data-f2c-match-id', currentMatchId);
+    setButtonState(btn, syncedStateMap.get(currentMatchId) || false);
 
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      handleButtonClick(btn, matchId);
+      handleButtonClick(btn, currentMatchId);
     });
 
-    targetContainer.appendChild(btn);
+    if (insertBeforeEl && insertBeforeEl.parentElement === targetContainer) {
+      targetContainer.insertBefore(btn, insertBeforeEl);
+    } else {
+      targetContainer.appendChild(btn);
+    }
 
     // Check sync status immediately
-    sendMessage('CHECK_MATCH', { matchId }).then((res) => {
+    sendMessage('CHECK_MATCH', { matchId: currentMatchId }).then((res) => {
       if (res.success && res.data?.isSynced) {
-        syncedStateMap.set(matchId, true);
+        syncedStateMap.set(currentMatchId, true);
         setButtonState(btn, true);
       }
     });
@@ -880,6 +930,8 @@
 
     // Find all links to matches in tables or fixture lists
     const matchLinks = document.querySelectorAll('a[href*="/match/"], a[href*="/matches/"]');
+    if (matchLinks.length === 0) return;
+
     const newMatchIds = new Set();
 
     matchLinks.forEach((link) => {
@@ -934,42 +986,110 @@
     updateFixtureRowHighlights();
   }
 
+  // Throttled scan scheduler to prevent debouncer starvation
+  let scanPending = false;
+  let lastScanTime = 0;
+  const SCAN_THROTTLE_MS = 250;
+
   function scheduleScan() {
-    if (scanDebounceTimer) clearTimeout(scanDebounceTimer);
-    scanDebounceTimer = setTimeout(scanPage, 200);
+    const now = Date.now();
+    if (now - lastScanTime >= SCAN_THROTTLE_MS) {
+      lastScanTime = now;
+      scanPage();
+    } else if (!scanPending) {
+      scanPending = true;
+      setTimeout(() => {
+        scanPending = false;
+        lastScanTime = Date.now();
+        scanPage();
+      }, SCAN_THROTTLE_MS);
+    }
   }
 
-  // Observe DOM changes for client-side navigation & infinite scrolling
+  // Instant cleanup & cascading scans on SPA route changes
+  function handleUrlChange() {
+    const activeMatchId = getActiveMatchId();
+    if (!activeMatchId) {
+      document.querySelectorAll('.f2c-btn-header').forEach((btn) => btn.remove());
+    } else {
+      document.querySelectorAll('.f2c-btn-header').forEach((btn) => {
+        if (btn.getAttribute('data-f2c-match-id') !== String(activeMatchId)) {
+          btn.remove();
+        }
+      });
+    }
+
+    scanPage();
+    // Cascading retries to match React's asynchronous component rendering
+    setTimeout(scanPage, 120);
+    setTimeout(scanPage, 350);
+    setTimeout(scanPage, 800);
+  }
+
+  // 1. URL Heartbeat: checks every 150ms so client-side navigation is NEVER missed
+  let lastObservedUrl = window.location.href;
+  setInterval(() => {
+    if (window.location.href !== lastObservedUrl) {
+      lastObservedUrl = window.location.href;
+      handleUrlChange();
+    }
+  }, 150);
+
+  // 2. Click interceptor on anchor links for instant reactivity
+  document.addEventListener('click', (e) => {
+    const anchor = e.target.closest('a[href]');
+    if (anchor) {
+      setTimeout(() => {
+        if (window.location.href !== lastObservedUrl) {
+          lastObservedUrl = window.location.href;
+          handleUrlChange();
+        }
+      }, 50);
+    }
+  }, true);
+
+  // 3. Monkeypatch HTML5 History API
+  const originalPushState = history.pushState;
+  history.pushState = function () {
+    originalPushState.apply(this, arguments);
+    lastObservedUrl = window.location.href;
+    handleUrlChange();
+  };
+
+  const originalReplaceState = history.replaceState;
+  history.replaceState = function () {
+    originalReplaceState.apply(this, arguments);
+    lastObservedUrl = window.location.href;
+    handleUrlChange();
+  };
+
+  window.addEventListener('popstate', () => {
+    lastObservedUrl = window.location.href;
+    handleUrlChange();
+  });
+  window.addEventListener('hashchange', () => {
+    lastObservedUrl = window.location.href;
+    handleUrlChange();
+  });
+
+  // 4. MutationObserver for DOM changes (scroll, live scores, route content updates)
   const observer = new MutationObserver((mutations) => {
-    let shouldScan = false;
+    let hasRelevantMutation = false;
     for (const m of mutations) {
-      if (m.addedNodes.length > 0) {
-        shouldScan = true;
+      if (m.addedNodes.length > 0 || m.removedNodes.length > 0) {
+        hasRelevantMutation = true;
         break;
       }
     }
-    if (shouldScan) scheduleScan();
+    if (hasRelevantMutation) {
+      scheduleScan();
+    }
   });
 
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true
   });
-
-  // Watch SPA URL changes
-  const originalPushState = history.pushState;
-  history.pushState = function () {
-    originalPushState.apply(this, arguments);
-    scheduleScan();
-  };
-
-  const originalReplaceState = history.replaceState;
-  history.replaceState = function () {
-    originalReplaceState.apply(this, arguments);
-    scheduleScan();
-  };
-
-  window.addEventListener('popstate', scheduleScan);
 
   // Initial scan on load
   if (document.readyState === 'loading') {
